@@ -33,6 +33,8 @@ struct drme_conn_info {
 	drmModeCrtcPtr saved_crtc = nullptr; // the configuration of the crtc before we changed it. We use it so we can restore the same mode when we exit.
 };
 
+static struct drme_conn_info* conn_info_list = nullptr;
+
 static int device_setup(const char* card_node)
 {
     // open drm device
@@ -56,13 +58,14 @@ static int device_setup(const char* card_node)
     return drm_fd;
 }
 
-static void scan_connectors(int drm_fd)
+static bool scan_connectors(int drm_fd)
 {
     // get all of the resources
     drmModeResPtr drm_res = drmModeGetResources(drm_fd);
     if (drm_res == nullptr) {
         fprintf(stderr, "[!] Failed to get DRM resources : (%d) %m\n", errno);
-        std::exit(1);
+        drmModeFreeResources(drm_res);
+        return false;
     }
 
     // traverse all connectors
@@ -75,42 +78,46 @@ static void scan_connectors(int drm_fd)
         drmModeConnectorPtr drm_conn =
             drmModeGetConnector(drm_fd, drm_res->connectors[i]);
         if (drm_conn == nullptr) {
-          fprintf(stderr, "[!] Failed to get DRM connector[%u]:%u : (%d) %m\n",
-                  i, drm_res->connectors[i], errno);
-          std::exit(1);
+            fprintf(stderr, "[!] Failed to get DRM connector[%u]:%u : (%d) %m\n",
+                    i, drm_res->connectors[i], errno);
+            drmModeFreeConnector(drm_conn);
+            continue;
         }
         conn_info->conn_id = drm_conn->connector_id;
 
         /* Step2: check if a display device is connected */
         if (drm_conn->connection != DRM_MODE_CONNECTED) {
-          drmModeFreeConnector(drm_conn);
-          break;
+            drmModeFreeConnector(drm_conn);
+            break;
         }
 
         /* Step3: get encoder+crtc */
+        // check active encoder+crtc on current connection first
         drmModeEncoderPtr current_encoder =
             drmModeGetEncoder(drm_fd, drm_conn->encoder_id); // might be nullptr
 
-        if (current_encoder != nullptr) {
-            if (current_encoder->crtc_id != 0) {
-                bool has_used = false;
-                // check if this crtc has benn used
-                struct drme_conn_info *tmp = conn_info;
-                while (tmp != nullptr) {
-                    if (tmp->crtc_id == current_encoder->crtc_id) {
-                        has_used = true;
-                        break;
-                    }
-
-                    if (has_used == false) {
-                        conn_info->crtc_id = current_encoder->crtc_id;
-                    }
+        if (current_encoder != nullptr && current_encoder->crtc_id != 0) {
+            bool has_used = false;
+            // check if this crtc has benn used
+            struct drme_conn_info *tmp = conn_info;
+            while (tmp != nullptr) {
+                if (tmp->crtc_id == current_encoder->crtc_id) {
+                    has_used = true;
+                    break;
                 }
+
+                if (has_used == false) {
+                    conn_info->crtc_id = current_encoder->crtc_id;
+                }
+
+                tmp = tmp->next;
             }
         }
         if (conn_info->crtc_id == 0) {
             fprintf(stderr, "[!] Failed to get suitable crtc : (%d) %m\n", errno);
-            std::exit(1);
+            drmModeFreeEncoder(current_encoder);
+            drmModeFreeConnector(drm_conn);
+            continue;
         }
         // TODO: find suitable encoder+crtc if current active encoder+crtc is unavailable.
 
@@ -127,7 +134,17 @@ static void scan_connectors(int drm_fd)
 
         /* Step5: create framebuffer */
         // TODO
+
+        /* Step6: cleanup */
+        drmModeFreeEncoder(current_encoder);
+        drmModeFreeConnector(drm_conn);
+        // store conn_info into single-list
+        conn_info->next = conn_info_list;
+        conn_info_list = conn_info;
     }
+
+    // clean up resources
+    drmModeFreeResources(drm_res);
 }
 
 int main()
