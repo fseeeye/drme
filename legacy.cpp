@@ -190,11 +190,12 @@ static std::shared_ptr<drme_dumb_buffer> alloc_buffer(int drm_fd, uint32_t width
     std::shared_ptr<drme_dumb_buffer> buffer = std::make_shared<drme_dumb_buffer>();
 
     // Step1: create dumb buffer
-    struct drm_mode_create_dumb create = {0};
-    create.width = width;
-    create.height = height;
-    create.bpp = 32; // bits per pixel, TODO: set by swapchain
-    //create.flags = xxx 
+    struct drm_mode_create_dumb create = {
+        .height = height,
+        .width = width,
+        .bpp = 32, // bits per pixel, TODO: set by swapchain 
+        .flags = 0
+    };
     if (drmIoctl(drm_fd, DRM_IOCTL_MODE_CREATE_DUMB, &create) != 0) {
         fprintf(stderr, "[!] Failed to create DRM dumb buffer : (%d) %m\n",
 			errno);
@@ -212,10 +213,12 @@ static std::shared_ptr<drme_dumb_buffer> alloc_buffer(int drm_fd, uint32_t width
 
     // Step2: map the dumb buffer for userspace drawing
     // prepare buffer for mmap
-	struct drm_mode_map_dumb map = {0};
-	map.handle = buffer->handle;
+	struct drm_mode_map_dumb map = {
+        .handle = buffer->handle,
+        .pad = 0
+    };
 
-    if (drmIoctl(drm_fd, DRM_IOCTL_MODE_MAP_DUMB, &map)) {
+    if (drmIoctl(drm_fd, DRM_IOCTL_MODE_MAP_DUMB, &map) != 0) {
         fprintf(stderr, "[!] Failed to map DRM dumb buffer : (%d) %m\n",
 			errno);
 		return nullptr;
