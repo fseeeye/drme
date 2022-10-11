@@ -76,6 +76,15 @@ static int drme_device_setup(const char* card_node)
 		return -1;
     }
 
+    // uint64_t has_addfb2;
+    // if (drmGetCap(drm_fd, DRM_CAP_ADDFB2_MODIFIERS, &has_addfb2) != 0 ||
+    //     has_addfb2 == false) {
+    //     fprintf(stderr, "[!] DRM device '%s' does not support DRM_CAP_ADDFB2_MODIFIERS capability.\n",
+	// 		card_node);
+	// 	close(drm_fd);
+	// 	return -1;
+    // }
+
     return drm_fd;
 }
 
@@ -231,6 +240,12 @@ static std::shared_ptr<drme_dumb_buffer> alloc_buffer(int drm_fd, uint32_t width
     memset(buffer->map, std::numeric_limits<int>::max(), buffer->size);
 
     // TODO: Step3: convert to DMA buffer fd
+    int prime_fd;
+    if (drmPrimeHandleToFD(drm_fd, buffer->handle, DRM_CLOEXEC,
+			&prime_fd) != 0) { // RAW
+        fprintf(stderr, "[!] Failed to convert handle to prime fd : (%d) %m\n", errno);
+		return nullptr;
+	}
 
     return buffer;
 }
