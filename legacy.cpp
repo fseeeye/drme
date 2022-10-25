@@ -25,6 +25,7 @@ static uint32_t add_fb(std::shared_ptr<drme_conn_info> conn_info, std::shared_pt
 void print_modes(drmModeConnectorPtr drm_conn);
 
 struct drme_dumb_buffer {
+    int fd;
 	uint32_t handle; // a DRM handle to the buffer object that we can draw into
 	uint32_t stride;
 	uint32_t width, height;
@@ -218,8 +219,6 @@ static std::shared_ptr<drme_dumb_buffer> alloc_buffer(int drm_fd, uint32_t width
     buffer->handle = create.handle;
     buffer->size   = create.size;
 
-    // buffer->drm_fd = drm_fd
-
     // Step2: map the dumb buffer for userspace drawing
     // prepare buffer for mmap
 	struct drm_mode_map_dumb map = {
@@ -246,6 +245,7 @@ static std::shared_ptr<drme_dumb_buffer> alloc_buffer(int drm_fd, uint32_t width
         fprintf(stderr, "[!] Failed to convert handle to prime fd : (%d) %m\n", errno);
 		return nullptr;
 	}
+    buffer->fd = prime_fd;
 
     return buffer;
 }

@@ -21,9 +21,16 @@ add_executable(drme_legacy
 target_link_libraries(drme_legacy drm)
 
 add_executable(drme_atomic_gbm
-    atomic_gbm.cpp
+    gbm_atomic.cpp
+    gbm_allocator.cpp
 )
 target_link_libraries(drme_atomic_gbm drm gbm EGL)
+
+add_executable(drme_atomic_shm
+    shm_atomic.cpp
+    shm_allocator.cpp
+)
+target_link_libraries(drme_atomic_shm drm)
 
 add_executable(drme_mesa_gbm_demo
     mesa_gbm_demo.cpp
