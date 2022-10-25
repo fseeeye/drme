@@ -165,7 +165,14 @@ int gbm_allocator_create_drm_fb(int fd, struct modeset_buf *buf)
 				GBM_BO_TRANSFER_READ_WRITE,
 				&dst_stride,
 				&gbo_mapping));
-
+	if (map == nullptr)
+	{
+		fprintf(stderr, "[!] failed to map gbm bo!\n");
+		gbm_bo_destroy(gbm_bo);
+		gbm_device_destroy(gbm);
+		return -1;
+	}
+	
 	// create fb
 	uint32_t fb_id = 0;
 	int ret = drmModeAddFB2(fd, buf->width, buf->height, DRM_FORMAT_XRGB8888,
