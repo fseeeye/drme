@@ -16,23 +16,23 @@ include_directories(
 )
 
 add_executable(drme_legacy 
-    legacy.cpp    
+    src/legacy.cpp    
 )
 target_link_libraries(drme_legacy drm)
 
 add_executable(drme_atomic_gbm
-    gbm_atomic.cpp
-    gbm_allocator.cpp
+    src/gbm_atomic.cpp
+    src/gbm_allocator.cpp
 )
 target_link_libraries(drme_atomic_gbm drm gbm EGL)
 
 add_executable(drme_atomic_shm
-    shm_atomic.cpp
-    shm_allocator.cpp
+    src/shm_atomic.cpp
+    src/shm_allocator.cpp
 )
 target_link_libraries(drme_atomic_shm drm)
 
 add_executable(drme_mesa_gbm_demo
-    mesa_gbm_demo.cpp
+    src/mesa_gbm_demo.cpp
 )
 target_link_libraries(drme_mesa_gbm_demo drm gbm EGL GL GLU glut)
