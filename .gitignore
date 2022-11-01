@@ -4,6 +4,7 @@
 
 build
 builddir
+out
 
 mesa
 drm

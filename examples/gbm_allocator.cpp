@@ -44,9 +44,9 @@ int gbm_allocator_create_drm_fb(int fd, struct modeset_buf *buf)
 	}
 
 	printf("Created GBM device with backend: %s\n", gbm_device_get_backend_name(gbm));
-	char *drm_name = drmGetDeviceNameFromFd2(fd);
-	printf("Using DRM node: %s\n", drm_name);
-	free(drm_name);
+	char *device_name = drmGetDeviceNameFromFd2(fd);
+	printf("Using DRM node: %s\n", device_name);
+	free(device_name);
 	
 	/* CORE: gbm bo */
 	// TODO: create with modifiers
@@ -138,8 +138,8 @@ int gbm_allocator_create_drm_fb(int fd, struct modeset_buf *buf)
 
 	int dma_fd = gbm_bo_get_fd(gbm_bo);
 	if (dma_fd < 0) {
-		// IMPORTANT: use GBM_BO_USE_WRITE, gbm will create dumb buffer.
-		//            so we can't get fd from it on some devices?
+		// FIXME: use GBM_BO_USE_WRITE, gbm will create dumb buffer.
+		//        so we can't get fd from it on some devices?
 		fprintf(stderr, "[!] gbm bo fd < 0.\n");
 	}  else {
 		printf("[*] gbm bo fd: %d\n", dma_fd);

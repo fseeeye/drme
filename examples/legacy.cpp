@@ -238,7 +238,7 @@ static std::shared_ptr<drme_dumb_buffer> alloc_buffer(int drm_fd, uint32_t width
     // clear buffer to 0
     memset(buffer->map, std::numeric_limits<int>::max(), buffer->size);
 
-    // TODO: Step3: convert to DMA buffer fd
+    // FIXME: Step3: convert to DMA buffer fd
     int prime_fd;
     if (drmPrimeHandleToFD(drm_fd, buffer->handle, DRM_CLOEXEC,
 			&prime_fd) != 0) { // RAW
